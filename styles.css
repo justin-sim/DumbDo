@@ -1,0 +1,338 @@
+:root {
+    /* Light theme variables */
+    --primary: #2196F3;
+    --primary-hover: #1976D2;
+    --background: #f5f5f5;
+    --container: white;
+    --text: #333;
+    --border: #ccc;
+    --shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --transition: 0.2s ease;
+}
+
+[data-theme="dark"] {
+    --background: #1a1a1a;
+    --container: #2d2d2d;
+    --text: white;
+    --border: #404040;
+    --shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+    transition: background-color var(--transition), color var(--transition);
+}
+
+.app {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+h1 {
+    font-size: 2rem;
+    color: var(--text);
+}
+
+button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color var(--transition);
+}
+
+button:hover {
+    background: var(--primary-hover);
+}
+
+#themeToggle {
+    position: absolute;
+    right: 0;
+    background: transparent;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--text);
+    border-radius: 50%;
+}
+
+#themeToggle:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+#themeToggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--text);
+    fill: none;
+    stroke-width: 2;
+}
+
+.button-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.clear-btn {
+    background: transparent;
+    padding: 0.5rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ff4444;
+}
+
+.clear-btn svg {
+    stroke: #ff4444;
+    stroke-width: 2;
+    fill: none;
+}
+
+.clear-btn:hover {
+    background: rgba(255,68,68,0.1);
+}
+
+.todo-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+}
+
+input {
+    flex: 1;
+    max-width: 400px;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--container);
+    color: var(--text);
+    transition: border-color var(--transition);
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.todo-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    width: 100%;
+}
+
+.todo-item {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--container);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    transition: transform var(--transition);
+    width: 100%;
+    max-width: 500px;
+}
+
+.todo-item:hover {
+    transform: translateY(-2px);
+}
+
+.todo-item.completed span {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.todo-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    justify-self: start;
+}
+
+.todo-item span {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+    text-align: left;
+    justify-self: start;
+}
+
+.delete-btn {
+    margin-left: auto;
+    background: transparent;
+    color: #ff4444;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #ff4444;
+    justify-self: end;
+}
+
+.delete-btn:hover {
+    background: rgba(255,68,68,0.1);
+}
+
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.75rem 1.5rem;
+    background: var(--container);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+.todo-divider {
+    width: 100%;
+    max-width: 500px;
+    text-align: left;
+    padding: 1rem 0;
+    margin: 1rem 0;
+    color: var(--text);
+    opacity: 0.7;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 480px) {
+    .app {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .todo-form {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .button-group {
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .button-group button[type="submit"] {
+        flex: 1;
+    }
+}
+
+/* PIN Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal[aria-hidden="false"] {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--container);
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    max-width: 90%;
+    width: 400px;
+    text-align: center;
+}
+
+.modal h2 {
+    margin-bottom: 0.5rem;
+    color: var(--text);
+}
+
+.pin-description {
+    color: var(--text);
+    opacity: 0.8;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.pin-input-container {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.pin-input {
+    width: 35px;
+    height: 45px;
+    text-align: center;
+    font-size: 1.25rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--container);
+    color: var(--text);
+    transition: all var(--transition);
+}
+
+.pin-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.pin-input.has-value {
+    border-color: var(--primary);
+    color: var(--primary);
+    background-color: transparent;
+}
+
+.pin-error {
+    color: #ff4444;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    display: none;
+}
+
+.pin-error[aria-hidden="false"] {
+    display: block;
+} 
