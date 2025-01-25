@@ -19,11 +19,14 @@ let verifiedPin = null;
 async function checkPinRequired() {
     try {
         const response = await fetch('/api/pin-required');
-        const { required, length } = await response.json();
+        const { required, length, locked, lockoutMinutes } = await response.json();
         if (required) {
             if (!verifiedPin) {
                 await setupPinInputs(length);
                 showPinModal();
+                if (locked) {
+                    showLockoutError(lockoutMinutes);
+                }
             }
         } else {
             loadTodos();
@@ -113,6 +116,14 @@ function clearPin() {
     pinInputs[0].focus();
 }
 
+function showLockoutError(minutes) {
+    pinError.textContent = `Too many attempts. Please try again in ${minutes} minutes.`;
+    pinError.setAttribute('aria-hidden', 'false');
+    pinInputs.forEach(input => {
+        input.disabled = true;
+    });
+}
+
 async function verifyPin(pin) {
     try {
         const response = await fetch('/api/verify-pin', {
@@ -122,14 +133,20 @@ async function verifyPin(pin) {
             },
             body: JSON.stringify({ pin })
         });
-        const { valid } = await response.json();
-        if (valid) {
+        const data = await response.json();
+        
+        if (data.valid) {
             verifiedPin = pin;
             hidePinModal();
             loadTodos();
         } else {
+            pinError.textContent = data.error;
             pinError.setAttribute('aria-hidden', 'false');
             clearPin();
+            
+            if (data.locked) {
+                showLockoutError(data.lockoutMinutes);
+            }
         }
     } catch (error) {
         showToast('Failed to verify PIN');
