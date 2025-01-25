@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
+const crypto = require('crypto');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -9,6 +10,19 @@ const port = process.env.PORT || 3000;
 const PIN = process.env.DUMBDO_PIN;
 const MIN_PIN_LENGTH = 4;
 const MAX_PIN_LENGTH = 10;
+
+// Constant-time string comparison
+function secureCompare(a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string') {
+        return false;
+    }
+    
+    // Use Node's built-in constant-time comparison
+    return crypto.timingSafeEqual(
+        Buffer.from(a.padEnd(MAX_PIN_LENGTH, '0')), 
+        Buffer.from(b.padEnd(MAX_PIN_LENGTH, '0'))
+    );
+}
 
 // Middleware
 app.use(express.json());
@@ -21,7 +35,7 @@ function requirePin(req, res, next) {
     }
 
     const providedPin = req.headers['x-pin'];
-    if (providedPin !== PIN) {
+    if (!providedPin || !secureCompare(providedPin, PIN)) {
         return res.status(401).json({ error: 'Invalid PIN' });
     }
 
@@ -69,7 +83,7 @@ app.post('/api/verify-pin', (req, res) => {
         });
     }
     
-    if (!PIN || pin === PIN) {
+    if (!PIN || secureCompare(pin, PIN)) {
         res.json({ valid: true });
     } else {
         res.status(401).json({ valid: false });

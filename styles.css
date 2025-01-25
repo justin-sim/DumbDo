@@ -303,7 +303,7 @@ input:focus {
     margin-bottom: 1rem;
 }
 
-.pin-input {
+.pin-input-container input.pin-input {
     width: 35px;
     height: 45px;
     text-align: center;
@@ -313,17 +313,28 @@ input:focus {
     background: var(--container);
     color: var(--text);
     transition: all var(--transition);
+    flex: none;
+    max-width: 30px;
+    padding: 0;
 }
 
-.pin-input:focus {
+.pin-input-container input.pin-input:focus {
     outline: none;
     border-color: var(--primary);
 }
 
-.pin-input.has-value {
+.pin-input-container input.pin-input.has-value {
     border-color: var(--primary);
-    color: var(--primary);
-    background-color: transparent;
+    background-color: var(--primary);
+    color: white;
+}
+
+[data-theme="dark"] .pin-input-container input.pin-input.has-value {
+    color: white;
+}
+
+[data-theme="light"] .pin-input-container input.pin-input.has-value {
+    color: white;
 }
 
 .pin-error {

@@ -8,7 +8,6 @@ A stupidly simple todo list application that just works. No complex database, no
 - 🌓 Dark/Light mode with system preference detection
 - 💾 File-based storage - todos persist between sessions
 - 📱 Fully responsive design
-- ⌨️ Keyboard accessible
 - 🚀 Fast and lightweight
 
 ## Environment Variables
