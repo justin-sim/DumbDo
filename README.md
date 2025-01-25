@@ -11,6 +11,13 @@ A stupidly simple todo list application that just works. No complex database, no
 - ⌨️ Keyboard accessible
 - 🚀 Fast and lightweight
 
+## Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| PORT | The port number the server will listen on | 3000 | No |
+| DUMBDO_PIN | PIN protection for accessing todos (4-10 digits) | - | No |
+
 ## Quick Start
 
 ### Running Locally
@@ -72,6 +79,27 @@ dumbdo/
 ├── Dockerfile     # Docker configuration
 └── package.json   # Dependencies and scripts
 ```
+
+### Color Scheme
+
+- Primary: #2196F3 (Material Blue)
+- Hover: #1976D2 (Darker Blue)
+
+Light theme:
+- Background: #f5f5f5
+- Container: white
+- Text: #333
+- Borders: #ccc
+
+Dark theme:
+- Background: #1a1a1a
+- Container: #2d2d2d
+- Text: white
+- Borders: #404040
+
+## License
+
+MIT
 
 ## Contributing
 
