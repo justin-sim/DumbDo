@@ -10,10 +10,111 @@ const pinModal = document.getElementById('pinModal');
 const pinInputs = [...document.querySelectorAll('.pin-input')];
 const pinError = document.getElementById('pinError');
 const clearCompletedBtn = document.getElementById('clearCompleted');
+const listSelector = document.getElementById('listSelector');
+const renameListBtn = document.getElementById('renameList');
+const addListBtn = document.getElementById('addList');
 
 // State
-let todos = [];
+let todos = {};
+let currentList = 'List 1';
 let verifiedPin = null;
+
+// List Management
+function initializeLists(data) {
+    if (!data || Object.keys(data).length === 0) {
+        // Only create List 1 when there are no lists at all
+        todos = { 'List 1': [] };
+        currentList = 'List 1';
+    } else {
+        // Convert only numeric keys, preserve custom names
+        const convertedData = {};
+        Object.entries(data).forEach(([key, value]) => {
+            // Only convert numeric keys
+            if (/^\d+$/.test(key)) {
+                const newKey = `List ${Object.keys(convertedData).length + 1}`;
+                convertedData[newKey] = value;
+            } else {
+                convertedData[key] = value;
+            }
+        });
+        
+        todos = convertedData;
+        currentList = Object.keys(convertedData)[0];
+    }
+    
+    updateListSelector();
+    renderTodos();
+}
+
+function updateListSelector() {
+    listSelector.innerHTML = '';
+    // Sort the list keys to ensure List 1 comes first
+    const sortedKeys = Object.keys(todos).sort((a, b) => {
+        if (a === 'List 1') return -1;
+        if (b === 'List 1') return 1;
+        return a.localeCompare(b);
+    });
+    
+    sortedKeys.forEach(listId => {
+        const option = document.createElement('option');
+        option.value = listId;
+        option.textContent = listId;
+        option.selected = listId === currentList;
+        listSelector.appendChild(option);
+    });
+}
+
+function switchList(listId) {
+    currentList = listId;
+    renderTodos();
+}
+
+function addNewList() {
+    const listCount = Object.keys(todos).length + 1;
+    const newListId = `List ${listCount}`;
+    todos[newListId] = [];
+    currentList = newListId;
+    updateListSelector();
+    renderTodos();
+    saveTodos();
+    showToast('New list added');
+}
+
+async function renameCurrentList() {
+    const newName = prompt('Enter new list name:', currentList);
+    if (newName && newName.trim() && newName !== currentList && !todos[newName]) {
+        const oldName = currentList;
+        const oldTodos = { ...todos };  // Keep a full backup
+        
+        try {
+            // Update the data structure
+            todos[newName] = todos[currentList];
+            delete todos[currentList];
+            currentList = newName;
+            
+            // Update UI
+            updateListSelector();
+            
+            // Save changes
+            await saveTodos();
+            showToast('List renamed');
+        } catch (error) {
+            // Revert all changes on failure
+            todos = oldTodos;
+            currentList = oldName;
+            updateListSelector();
+            showToast('Failed to save list name change');
+        }
+    }
+}
+
+// Event Listeners for List Management
+listSelector.addEventListener('change', (e) => {
+    switchList(e.target.value);
+});
+
+renameListBtn.addEventListener('click', renameCurrentList);
+addListBtn.addEventListener('click', addNewList);
 
 // PIN Management
 async function checkPinRequired() {
@@ -200,8 +301,8 @@ async function loadTodos() {
     try {
         const response = await fetchWithPin('/api/todos');
         if (!response.ok) throw new Error('Failed to load todos');
-        todos = await response.json();
-        renderTodos();
+        const data = await response.json();
+        initializeLists(data);
     } catch (error) {
         showToast('Failed to load todos');
         console.error(error);
@@ -218,9 +319,11 @@ async function saveTodos() {
             body: JSON.stringify(todos)
         });
         if (!response.ok) throw new Error('Failed to save todos');
+        return true;
     } catch (error) {
         showToast('Failed to save todos');
         console.error(error);
+        throw error;  // Re-throw to handle in calling function
     }
 }
 
@@ -244,7 +347,7 @@ function createTodoElement(todo) {
     const deleteBtn = li.querySelector('.delete-btn');
     deleteBtn.addEventListener('click', () => {
         li.remove();
-        todos = todos.filter(t => t !== todo);
+        todos[currentList] = todos[currentList].filter(t => t !== todo);
         saveTodos();
         showToast('Task deleted');
     });
@@ -254,10 +357,11 @@ function createTodoElement(todo) {
 
 function renderTodos() {
     todoList.innerHTML = '';
+    const currentTodos = todos[currentList] || [];
     
     // Separate todos into active and completed
-    const activeTodos = todos.filter(todo => !todo.completed);
-    const completedTodos = todos.filter(todo => todo.completed);
+    const activeTodos = currentTodos.filter(todo => !todo.completed);
+    const completedTodos = currentTodos.filter(todo => todo.completed);
     
     // Render active todos
     activeTodos.forEach(todo => {
@@ -285,7 +389,7 @@ todoForm.addEventListener('submit', (e) => {
     
     if (text) {
         const todo = { text, completed: false };
-        todos.push(todo);
+        todos[currentList].push(todo);
         renderTodos();
         saveTodos();
         todoInput.value = '';
@@ -295,7 +399,8 @@ todoForm.addEventListener('submit', (e) => {
 
 // Clear completed tasks
 clearCompletedBtn.addEventListener('click', () => {
-    const completedCount = todos.filter(todo => todo.completed).length;
+    const currentTodos = todos[currentList];
+    const completedCount = currentTodos.filter(todo => todo.completed).length;
     
     if (completedCount === 0) {
         showToast('No completed tasks to clear');
@@ -303,7 +408,7 @@ clearCompletedBtn.addEventListener('click', () => {
     }
     
     if (confirm(`Are you sure you want to delete ${completedCount} completed task${completedCount === 1 ? '' : 's'}?`)) {
-        todos = todos.filter(todo => !todo.completed);
+        todos[currentList] = currentTodos.filter(todo => !todo.completed);
         renderTodos();
         saveTodos();
         showToast(`Cleared ${completedCount} completed task${completedCount === 1 ? '' : 's'}`);
