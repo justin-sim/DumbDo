@@ -9,6 +9,7 @@ A stupidly simple todo list application that just works. No complex database, no
 - 💾 File-based storage - todos persist between sessions
 - 📱 Fully responsive design
 - 🚀 Fast and lightweight
+- 🔒 PIN protection (4-10 digits if enabled)
 
 ## Environment Variables
 
@@ -78,27 +79,6 @@ dumbdo/
 ├── Dockerfile     # Docker configuration
 └── package.json   # Dependencies and scripts
 ```
-
-### Color Scheme
-
-- Primary: #2196F3 (Material Blue)
-- Hover: #1976D2 (Darker Blue)
-
-Light theme:
-- Background: #f5f5f5
-- Container: white
-- Text: #333
-- Borders: #ccc
-
-Dark theme:
-- Background: #1a1a1a
-- Container: #2d2d2d
-- Text: white
-- Borders: #404040
-
-## License
-
-MIT
 
 ## Contributing
 
