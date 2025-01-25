@@ -346,4 +346,6 @@ input:focus {
 
 .pin-error[aria-hidden="false"] {
     display: block;
-} 
+}
+
+/* Remove logo styles as they're no longer needed */ 

@@ -21,4 +21,10 @@ Thumbs.db
 # Application specific
 data/
 *.log
-.env 
+.env
+
+# Scripts and generated assets
+scripts/
+assets/
+*.png
+!src/assets/*.png  # Keep source PNGs if any 

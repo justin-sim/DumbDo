@@ -144,6 +144,11 @@ yarn-error.log
 data/
 *.log
 
+# Generated assets
+assets/
+*.png
+!src/assets/*.png  # Keep source PNGs if any
+
 # IDE
 .vscode/
 .idea/
