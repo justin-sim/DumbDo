@@ -54,7 +54,7 @@ docker run -p 3000:3000 -v $(pwd)/data:/app/data dumbdo
 
 ## Storage
 
-Todos are stored in a JSON file at `./data/todos.json`. The file is automatically created when you first run the application. 
+Todos are stored in a JSON file at `app/data/todos.json`. The file is automatically created when you first run the application. 
 
 To backup your todos, simply copy the `data` directory. To restore, place your backup `todos.json` in the `data` directory.
 
