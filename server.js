@@ -3,6 +3,7 @@ const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -10,6 +11,10 @@ const port = process.env.PORT || 3000;
 const PIN = process.env.DUMBDO_PIN;
 const MIN_PIN_LENGTH = 4;
 const MAX_PIN_LENGTH = 10;
+
+// Middleware
+app.use(express.json());
+app.use(cookieParser());
 
 // Brute force protection settings
 const MAX_ATTEMPTS = 5;  // Maximum attempts before lockout
@@ -60,54 +65,13 @@ function secureCompare(a, b) {
         return false;
     }
     
-    // Use Node's built-in constant-time comparison
     return crypto.timingSafeEqual(
         Buffer.from(a.padEnd(MAX_PIN_LENGTH, '0')), 
         Buffer.from(b.padEnd(MAX_PIN_LENGTH, '0'))
     );
 }
 
-// Middleware
-app.use(express.json());
-app.use(express.static('.'));
-
-// PIN validation middleware
-function requirePin(req, res, next) {
-    if (!PIN) {
-        return next();
-    }
-
-    const providedPin = req.headers['x-pin'];
-    if (!providedPin || !secureCompare(providedPin, PIN)) {
-        return res.status(401).json({ error: 'Invalid PIN' });
-    }
-
-    next();
-}
-
-// Data directory and file path
-const DATA_DIR = path.join(__dirname, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'todos.json');
-
-// Ensure the data directory and file exist
-async function initDataFile() {
-    try {
-        await fs.access(DATA_DIR);
-    } catch {
-        await fs.mkdir(DATA_DIR);
-    }
-    
-    try {
-        await fs.access(DATA_FILE);
-    } catch {
-        await fs.writeFile(DATA_FILE, JSON.stringify([]));
-    }
-    
-    // Log the location of the data file
-    console.log('Todo list stored at:', DATA_FILE);
-}
-
-// PIN Routes
+// Public PIN Routes - these don't require authentication
 app.get('/api/pin-required', (req, res) => {
     const lockoutTime = isLockedOut(req.ip);
     res.json({ 
@@ -147,6 +111,14 @@ app.post('/api/verify-pin', (req, res) => {
     if (!PIN || secureCompare(pin, PIN)) {
         // Reset attempts on successful login
         attempts.delete(req.ip);
+        
+        // Set secure cookie
+        res.cookie('DUMBDO_PIN', pin, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        });
+        
         res.json({ valid: true });
     } else {
         res.status(401).json({ 
@@ -157,8 +129,84 @@ app.post('/api/verify-pin', (req, res) => {
     }
 });
 
-// Todo Routes (Protected)
-app.get('/api/todos', requirePin, async (req, res) => {
+// Serve static files that don't need PIN protection
+app.get('/login.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.js'));
+});
+
+app.get('/styles.css', (req, res) => {
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+app.get('/favicon.svg', (req, res) => {
+    res.sendFile(path.join(__dirname, 'favicon.svg'));
+});
+
+// PIN validation helper
+function isValidPin(providedPin) {
+    return !PIN || (providedPin && secureCompare(providedPin, PIN));
+}
+
+// PIN validation middleware - everything after this requires PIN
+app.use((req, res, next) => {
+    const providedPin = req.cookies.DUMBDO_PIN || req.headers['x-pin'];
+    
+    if (isValidPin(providedPin)) {
+        return next();
+    }
+
+    if (req.xhr || req.path.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Invalid PIN' });
+    }
+    
+    if (req.path !== '/login') {
+        return res.redirect('/login');
+    }
+    
+    next();
+});
+
+// Protected routes below
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/login', (req, res) => {
+    const providedPin = req.cookies.DUMBDO_PIN || req.headers['x-pin'];
+    
+    if (isValidPin(providedPin)) {
+        res.redirect('/');
+    } else {
+        res.sendFile(path.join(__dirname, 'login.html'));
+    }
+});
+
+// Protect all other static files
+app.use(express.static('.'));
+
+// Data directory and file path
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'todos.json');
+
+// Ensure the data directory and file exist
+async function initDataFile() {
+    try {
+        await fs.access(DATA_DIR);
+    } catch {
+        await fs.mkdir(DATA_DIR);
+    }
+    
+    try {
+        await fs.access(DATA_FILE);
+    } catch {
+        await fs.writeFile(DATA_FILE, JSON.stringify({}));
+    }
+    
+    console.log('Todo list stored at:', DATA_FILE);
+}
+
+// Protected API routes
+app.get('/api/todos', async (req, res) => {
     try {
         const data = await fs.readFile(DATA_FILE, 'utf8');
         res.json(JSON.parse(data));
@@ -167,7 +215,7 @@ app.get('/api/todos', requirePin, async (req, res) => {
     }
 });
 
-app.post('/api/todos', requirePin, async (req, res) => {
+app.post('/api/todos', async (req, res) => {
     try {
         await fs.writeFile(DATA_FILE, JSON.stringify(req.body, null, 2));
         res.json({ success: true });

@@ -12,12 +12,54 @@ const pinError = document.getElementById('pinError');
 const clearCompletedBtn = document.getElementById('clearCompleted');
 const listSelector = document.getElementById('listSelector');
 const renameListBtn = document.getElementById('renameList');
+const deleteListBtn = document.getElementById('deleteList');
 const addListBtn = document.getElementById('addList');
+
+// Set up list selector event handlers once
+const selectorContainer = listSelector.parentElement;
+
+// Show/hide custom select on click
+function handleSelectorClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const customSelect = selectorContainer.querySelector('.custom-select');
+    if (customSelect) {
+        const isHidden = customSelect.style.display === 'none' || !customSelect.style.display;
+        customSelect.style.display = isHidden ? 'block' : 'none';
+    }
+}
+
+// Hide custom select when clicking outside
+function handleOutsideClick(e) {
+    const customSelect = selectorContainer.querySelector('.custom-select');
+    if (customSelect && !selectorContainer.contains(e.target)) {
+        customSelect.style.display = 'none';
+    }
+}
+
+// Handle keyboard navigation
+function handleKeyboard(e) {
+    const customSelect = selectorContainer.querySelector('.custom-select');
+    if (customSelect) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            customSelect.style.display = customSelect.style.display === 'none' ? 'block' : 'none';
+        } else if (e.key === 'Escape') {
+            customSelect.style.display = 'none';
+        }
+    }
+}
+
+// Initialize dropdown event listeners after data is loaded
+function initializeDropdown() {
+    listSelector.addEventListener('mousedown', handleSelectorClick);
+    document.addEventListener('click', handleOutsideClick);
+    listSelector.addEventListener('keydown', handleKeyboard);
+}
 
 // State
 let todos = {};
 let currentList = 'List 1';
-let verifiedPin = null;
 
 // List Management
 function initializeLists(data) {
@@ -47,7 +89,6 @@ function initializeLists(data) {
 }
 
 function updateListSelector() {
-    listSelector.innerHTML = '';
     // Sort the list keys to ensure List 1 comes first
     const sortedKeys = Object.keys(todos).sort((a, b) => {
         if (a === 'List 1') return -1;
@@ -55,13 +96,63 @@ function updateListSelector() {
         return a.localeCompare(b);
     });
     
+    // Update the native select
+    listSelector.innerHTML = sortedKeys.map(listId => 
+        `<option value="${listId}">${listId}</option>`
+    ).join('');
+    listSelector.value = currentList;
+    
+    // Create a custom select
+    const customSelect = document.createElement('div');
+    customSelect.className = 'custom-select';
+    customSelect.style.display = 'none'; // Explicitly set initial state
+    
     sortedKeys.forEach(listId => {
-        const option = document.createElement('option');
-        option.value = listId;
-        option.textContent = listId;
-        option.selected = listId === currentList;
-        listSelector.appendChild(option);
+        const item = document.createElement('div');
+        item.className = `list-item ${listId === 'List 1' ? 'list-1' : ''}`;
+        item.dataset.value = listId;
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = listId;
+        item.appendChild(nameSpan);
+        
+        if (listId !== 'List 1') {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.setAttribute('aria-label', `Delete ${listId}`);
+            deleteBtn.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            `;
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteList(listId);
+            });
+            item.appendChild(deleteBtn);
+        }
+        
+        item.addEventListener('click', () => {
+            if (listId !== currentList) {
+                switchList(listId);
+                customSelect.style.display = 'none';
+            }
+        });
+        
+        customSelect.appendChild(item);
     });
+    
+    // Replace the existing custom select if any
+    const existingCustomSelect = selectorContainer.querySelector('.custom-select');
+    if (existingCustomSelect) {
+        const wasVisible = existingCustomSelect.style.display === 'block';
+        selectorContainer.removeChild(existingCustomSelect);
+        if (wasVisible) {
+            customSelect.style.display = 'block';
+        }
+    }
+    selectorContainer.appendChild(customSelect);
 }
 
 function switchList(listId) {
@@ -108,6 +199,41 @@ async function renameCurrentList() {
     }
 }
 
+async function deleteList(listId) {
+    // Don't allow deleting the last list or List 1
+    if (Object.keys(todos).length <= 1 || listId === 'List 1') {
+        showToast('Cannot delete this list');
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete "${listId}" and all its tasks?`)) {
+        const oldTodos = { ...todos };
+        try {
+            // Remove the list
+            delete todos[listId];
+            
+            // If we're deleting the current list, switch to another one
+            if (listId === currentList) {
+                currentList = Object.keys(todos)[0];
+            }
+            
+            // Update UI
+            updateListSelector();
+            renderTodos();
+            
+            // Save changes
+            await saveTodos();
+            showToast('List deleted');
+        } catch (error) {
+            // Revert changes on failure
+            todos = oldTodos;
+            updateListSelector();
+            renderTodos();
+            showToast('Failed to delete list');
+        }
+    }
+}
+
 // Event Listeners for List Management
 listSelector.addEventListener('change', (e) => {
     switchList(e.target.value);
@@ -116,177 +242,27 @@ listSelector.addEventListener('change', (e) => {
 renameListBtn.addEventListener('click', renameCurrentList);
 addListBtn.addEventListener('click', addNewList);
 
-// PIN Management
-async function checkPinRequired() {
-    try {
-        const response = await fetch('/api/pin-required');
-        const { required, length, locked, lockoutMinutes } = await response.json();
-        if (required) {
-            if (!verifiedPin) {
-                await setupPinInputs(length);
-                showPinModal();
-                if (locked) {
-                    showLockoutError(lockoutMinutes);
-                }
-            }
-        } else {
-            loadTodos();
-        }
-    } catch (error) {
-        showToast('Failed to check PIN requirement');
-    }
-}
-
-async function setupPinInputs(length) {
-    const container = document.querySelector('.pin-input-container');
-    container.innerHTML = ''; // Clear existing inputs
-    
-    // Create new inputs based on PIN length
-    for (let i = 0; i < length; i++) {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.maxLength = 1;
-        input.pattern = '[0-9]';
-        input.inputMode = 'numeric';
-        input.className = 'pin-input';
-        input.setAttribute('aria-label', `PIN digit ${i + 1}`);
-        container.appendChild(input);
-    }
-    
-    // Update pinInputs array with new elements
-    pinInputs.length = 0;
-    pinInputs.push(...document.querySelectorAll('.pin-input'));
-    
-    // Set up event listeners for new inputs
-    setupPinInputListeners();
-}
-
-function setupPinInputListeners() {
-    pinInputs.forEach((input, index) => {
-        input.addEventListener('input', (e) => {
-            const value = e.target.value;
-            
-            // Add/remove the has-value class
-            input.classList.toggle('has-value', value !== '');
-            
-            if (value && index < pinInputs.length - 1) {
-                pinInputs[index + 1].focus();
-            }
-            
-            // Check if all inputs are filled
-            const pin = pinInputs.map(input => input.value).join('');
-            if (pin.length === pinInputs.length) {
-                verifyPin(pin);
-            }
-        });
-
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                pinInputs[index - 1].focus();
-                pinInputs[index - 1].classList.remove('has-value');
-            }
-        });
-
-        // Only allow numbers
-        input.addEventListener('keypress', (e) => {
-            if (!/[0-9]/.test(e.key)) {
-                e.preventDefault();
-            }
-        });
-    });
-}
-
-function showPinModal() {
-    pinModal.setAttribute('aria-hidden', 'false');
-    pinInputs[0].focus();
-    todoForm.style.display = 'none';
-}
-
-function hidePinModal() {
-    pinModal.setAttribute('aria-hidden', 'true');
-    todoForm.style.display = 'flex';
-    clearPin();
-}
-
-function clearPin() {
-    pinInputs.forEach(input => {
-        input.value = '';
-        input.classList.remove('has-value');
-    });
-    pinError.setAttribute('aria-hidden', 'true');
-    pinInputs[0].focus();
-}
-
-function showLockoutError(minutes) {
-    pinError.textContent = `Too many attempts. Please try again in ${minutes} minutes.`;
-    pinError.setAttribute('aria-hidden', 'false');
-    pinInputs.forEach(input => {
-        input.disabled = true;
-    });
-}
-
-async function verifyPin(pin) {
-    try {
-        const response = await fetch('/api/verify-pin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ pin })
-        });
-        const data = await response.json();
-        
-        if (data.valid) {
-            verifiedPin = pin;
-            hidePinModal();
-            loadTodos();
-        } else {
-            pinError.textContent = data.error;
-            pinError.setAttribute('aria-hidden', 'false');
-            clearPin();
-            
-            if (data.locked) {
-                showLockoutError(data.lockoutMinutes);
-            }
-        }
-    } catch (error) {
-        showToast('Failed to verify PIN');
-        clearPin();
-    }
-}
-
-// Enhanced fetch with PIN
-async function fetchWithPin(url, options = {}) {
-    if (verifiedPin) {
-        options.headers = {
-            ...options.headers,
-            'X-Pin': verifiedPin
-        };
-    }
+// Enhanced fetch with auth headers
+async function fetchWithAuth(url, options = {}) {
     return fetch(url, options);
 }
 
 // Theme Management
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-const currentTheme = localStorage.getItem('theme');
-
-function updateThemeIcons(isDark) {
+function updateThemeIcons() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     moonIcon.style.display = isDark ? 'none' : 'block';
     sunIcon.style.display = isDark ? 'block' : 'none';
 }
 
-if (currentTheme === 'dark' || (!currentTheme && prefersDark.matches)) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    updateThemeIcons(true);
-} else {
-    updateThemeIcons(false);
-}
+// Initialize theme icons once DOM is loaded
+document.addEventListener('DOMContentLoaded', updateThemeIcons);
 
 themeToggle.addEventListener('click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    updateThemeIcons(!isDark);
-    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    const newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcons();
 });
 
 // Toast Notification
@@ -299,10 +275,11 @@ function showToast(message, duration = 3000) {
 // Todo Management
 async function loadTodos() {
     try {
-        const response = await fetchWithPin('/api/todos');
+        const response = await fetchWithAuth('/api/todos');
         if (!response.ok) throw new Error('Failed to load todos');
         const data = await response.json();
         initializeLists(data);
+        initializeDropdown(); // Initialize dropdown after data is loaded
     } catch (error) {
         showToast('Failed to load todos');
         console.error(error);
@@ -311,7 +288,7 @@ async function loadTodos() {
 
 async function saveTodos() {
     try {
-        const response = await fetchWithPin('/api/todos', {
+        const response = await fetchWithAuth('/api/todos', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -416,4 +393,4 @@ clearCompletedBtn.addEventListener('click', () => {
 });
 
 // Initialize
-checkPinRequired(); 
+loadTodos(); 

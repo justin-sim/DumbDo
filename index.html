@@ -5,15 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DumbDo - Stupidly Simple Todo List</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script>
+        // Prevent theme flicker by setting theme immediately
+        (function() {
+            const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app">
         <header>
+            <h1>DumbDo</h1>
             <div class="list-controls">
-                <select id="listSelector" aria-label="Select todo list">
-                    <option value="List 1">List 1</option>
-                </select>
+                <div class="list-selector-container">
+                    <select id="listSelector" aria-label="Select todo list">
+                        <option value="List 1">List 1</option>
+                    </select>
+                </div>
                 <div class="list-buttons">
                     <button type="button" id="renameList" class="icon-btn" aria-label="Rename current list">
                         <svg viewBox="0 0 24 24" width="14" height="14">
@@ -29,7 +39,6 @@
                     </button>
                 </div>
             </div>
-            <h1>DumbDo</h1>
             <button id="themeToggle" aria-label="Toggle theme">
                 <svg class="moon" viewBox="0 0 24 24">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -72,18 +81,6 @@
         </main>
 
         <div id="toast" class="toast" role="alert" aria-hidden="true"></div>
-    </div>
-
-    <!-- PIN Modal -->
-    <div id="pinModal" class="modal" aria-hidden="true">
-        <div class="modal-content">
-            <h2>Enter PIN</h2>
-            <p class="pin-description">Please enter your PIN to access your todos.</p>
-            <div class="pin-input-container">
-                <!-- PIN inputs will be generated dynamically -->
-            </div>
-            <p id="pinError" class="pin-error" aria-hidden="true">Invalid PIN. Please try again.</p>
-        </div>
     </div>
 
     <script src="app.js"></script>
