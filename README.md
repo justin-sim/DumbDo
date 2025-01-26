@@ -24,7 +24,7 @@ A stupidly simple todo list application that just works. No complex database, no
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/dumbdo.git
+git clone https://github.com/abiteman/dumbdo.git
 cd dumbdo
 ```
 
