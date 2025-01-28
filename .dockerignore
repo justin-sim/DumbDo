@@ -27,4 +27,5 @@ data/
 scripts/
 assets/
 *.png
-!src/assets/*.png  # Keep source PNGs if any 
+!src/assets/*.png  # Keep source PNGs if any
+Boilerplate.md 
