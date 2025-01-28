@@ -2,6 +2,9 @@
 
 A stupidly simple todo list application that just works. No complex database, no unnecessary features - just todos.
 
+![image](https://github.com/user-attachments/assets/a7857b13-db10-430f-af20-aedbf0d26023)
+
+
 ## Features
 
 - ✨ Clean, minimal interface
