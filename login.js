@@ -1,6 +1,8 @@
 // DOM Elements
 const loginForm = document.getElementById('loginForm');
 const pinError = document.getElementById('pinError');
+const attemptsRemaining = document.getElementById('attemptsRemaining');
+const lockoutNotice = document.getElementById('lockoutNotice');
 const themeToggle = document.getElementById('themeToggle');
 const moonIcon = themeToggle.querySelector('.moon');
 const sunIcon = themeToggle.querySelector('.sun');
@@ -24,11 +26,31 @@ themeToggle.addEventListener('click', () => {
     updateThemeIcons();
 });
 
+// Check PIN status periodically
+async function checkPinStatus() {
+    try {
+        const response = await fetch('/api/pin-required');
+        const { locked, lockoutMinutes, attemptsLeft } = await response.json();
+        
+        if (locked) {
+            showLockout(lockoutMinutes);
+            pinInputs.forEach(input => input.disabled = true);
+        } else {
+            pinInputs.forEach(input => input.disabled = false);
+            if (attemptsLeft < 5) {
+                showError('', attemptsLeft);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to check PIN status:', error);
+    }
+}
+
 // PIN Management
 async function setupPinInputs() {
     try {
         const response = await fetch('/api/pin-required');
-        const { required, length, locked, lockoutMinutes } = await response.json();
+        const { required, length, locked, lockoutMinutes, attemptsLeft } = await response.json();
         
         // If no PIN is required, we shouldn't be on this page
         if (!required) {
@@ -60,10 +82,16 @@ async function setupPinInputs() {
         setupPinInputListeners();
         
         if (locked) {
-            showError(`Too many attempts. Please try again in ${lockoutMinutes} minutes.`);
+            showLockout(lockoutMinutes);
         } else {
+            if (attemptsLeft < 5) {
+                showError('', attemptsLeft);
+            }
             pinInputs[0].focus();
         }
+
+        // Start periodic status check
+        setInterval(checkPinStatus, 10000); // Check every 10 seconds
     } catch (error) {
         showError('Failed to initialize PIN inputs');
     }
@@ -103,9 +131,34 @@ function setupPinInputListeners() {
     });
 }
 
-function showError(message) {
-    pinError.textContent = message;
-    pinError.setAttribute('aria-hidden', 'false');
+function showError(message, attemptsLeft = null) {
+    if (message) {
+        pinError.textContent = message;
+        pinError.setAttribute('aria-hidden', 'false');
+    } else {
+        pinError.setAttribute('aria-hidden', 'true');
+    }
+    
+    // Handle attempts remaining
+    if (attemptsLeft !== null) {
+        attemptsRemaining.textContent = `${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining`;
+        attemptsRemaining.setAttribute('aria-hidden', 'false');
+    } else {
+        attemptsRemaining.setAttribute('aria-hidden', 'true');
+    }
+}
+
+function showLockout(minutes) {
+    lockoutNotice.textContent = `Too many attempts. Please try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`;
+    lockoutNotice.setAttribute('aria-hidden', 'false');
+    pinError.setAttribute('aria-hidden', 'true');
+    attemptsRemaining.setAttribute('aria-hidden', 'true');
+}
+
+function clearErrors() {
+    pinError.setAttribute('aria-hidden', 'true');
+    attemptsRemaining.setAttribute('aria-hidden', 'true');
+    lockoutNotice.setAttribute('aria-hidden', 'true');
 }
 
 function clearInputs() {
@@ -113,7 +166,7 @@ function clearInputs() {
         input.value = '';
         input.classList.remove('has-value');
     });
-    pinError.setAttribute('aria-hidden', 'true');
+    clearErrors();
     pinInputs[0].focus();
 }
 
@@ -135,12 +188,16 @@ async function verifyPin(pin) {
             return;
         }
         
-        showError(data.error);
-        clearInputs();
-        
         if (data.locked) {
+            showLockout(data.lockoutMinutes);
             pinInputs.forEach(input => input.disabled = true);
+        } else {
+            showError(data.error, data.attemptsLeft);
         }
+        clearInputs();
+
+        // Check status immediately after a failed attempt
+        await checkPinStatus();
     } catch (error) {
         showError('Failed to verify PIN');
         clearInputs();

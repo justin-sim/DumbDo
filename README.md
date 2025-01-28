@@ -24,7 +24,7 @@ A stupidly simple todo list application that just works. No complex database, no
 
 1. Clone the repository
 ```bash
-git clone https://github.com/abiteman/dumbdo.git
+git clone https://github.com/dumbwareio/dumbdo.git
 cd dumbdo
 ```
 
@@ -42,14 +42,16 @@ npm start
 
 ### Using Docker
 
-1. Build the image
+1. Pull from Docker Hub (recommended)
 ```bash
-docker build -t dumbdo .
+docker pull dumbwareio/dumbdo:latest
+docker run -p 3000:3000 -v $(pwd)/data:/app/data dumbwareio/dumbdo:latest
 ```
 
-2. Run the container
+2. Or build locally
 ```bash
-docker run -p 3000:3000 -v $(pwd)/data:/app/data dumbdo
+docker build -t dumbwareio/dumbdo .
+docker run -p 3000:3000 -v $(pwd)/data:/app/data dumbwareio/dumbdo
 ```
 
 ## Storage

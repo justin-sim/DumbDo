@@ -98,9 +98,8 @@ function updateListSelector() {
     
     // Update the native select
     listSelector.innerHTML = sortedKeys.map(listId => 
-        `<option value="${listId}">${listId}</option>`
+        `<option value="${listId}"${listId === currentList ? ' selected' : ''}>${listId}</option>`
     ).join('');
-    listSelector.value = currentList;
     
     // Create a custom select
     const customSelect = document.createElement('div');
@@ -157,6 +156,7 @@ function updateListSelector() {
 
 function switchList(listId) {
     currentList = listId;
+    listSelector.value = listId; // Update the native select value
     renderTodos();
 }
 

@@ -25,7 +25,11 @@
                     <div class="pin-input-container">
                         <!-- PIN inputs will be generated dynamically -->
                     </div>
-                    <p id="pinError" class="pin-error" aria-hidden="true">Invalid PIN. Please try again.</p>
+                    <div class="pin-status">
+                        <p id="attemptsRemaining" class="attempts-remaining" aria-hidden="true">5 attempts remaining</p>
+                        <p id="pinError" class="pin-error" aria-hidden="true">Invalid PIN. Please try again.</p>
+                        <p id="lockoutNotice" class="lockout-notice" aria-hidden="true">Too many attempts. Please try again later.</p>
+                    </div>
                 </form>
             </div>
             <button id="themeToggle" aria-label="Toggle theme">

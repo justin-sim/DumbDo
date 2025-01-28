@@ -586,4 +586,49 @@ input:focus {
     .login-page h1 {
         font-size: 2rem;
     }
+}
+
+/* PIN Status Styles */
+.pin-status {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+}
+
+.attempts-remaining {
+    color: #ff4444;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: none;
+}
+
+.attempts-remaining[aria-hidden="false"] {
+    display: block;
+}
+
+.lockout-notice {
+    color: #ff4444;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: rgba(255, 68, 68, 0.1);
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #ff4444;
+    display: none;
+}
+
+.lockout-notice[aria-hidden="false"] {
+    display: block;
+}
+
+.pin-error {
+    color: #ff4444;
+    font-size: 0.9rem;
+    display: none;
+}
+
+.pin-error[aria-hidden="false"] {
+    display: block;
 } 
