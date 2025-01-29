@@ -191,6 +191,46 @@ input:focus {
     min-width: 0;
     text-align: left;
     justify-self: start;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: background-color var(--transition);
+}
+
+.todo-item span:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .todo-item span:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.todo-item .edit-input {
+    width: 100%;
+    padding: 0.25rem;
+    margin: 0;
+    border: 1px solid var(--primary);
+    border-radius: 4px;
+    background: var(--container);
+    color: var(--text);
+    font-size: inherit;
+    font-family: inherit;
+}
+
+.todo-item a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: opacity var(--transition);
+}
+
+.todo-item a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.todo-item.completed a {
+    opacity: 0.7;
+    text-decoration: line-through;
 }
 
 .delete-btn {

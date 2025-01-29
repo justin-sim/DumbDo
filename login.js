@@ -64,7 +64,7 @@ async function setupPinInputs() {
         // Create PIN inputs
         for (let i = 0; i < length; i++) {
             const input = document.createElement('input');
-            input.type = 'text';
+            input.type = 'password';
             input.maxLength = 1;
             input.pattern = '[0-9]';
             input.inputMode = 'numeric';

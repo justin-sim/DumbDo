@@ -309,16 +309,57 @@ function createTodoElement(todo) {
     li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
     li.innerHTML = `
         <input type="checkbox" ${todo.completed ? 'checked' : ''}>
-        <span>${todo.text}</span>
+        <span class="todo-text">${linkifyText(todo.text)}</span>
         <button class="delete-btn" aria-label="Delete todo">×</button>
     `;
 
     const checkbox = li.querySelector('input');
+    const todoText = li.querySelector('.todo-text');
+    
     checkbox.addEventListener('change', () => {
         todo.completed = checkbox.checked;
         renderTodos();
         saveTodos();
         showToast(todo.completed ? 'Task completed! 🎉' : 'Task uncompleted');
+    });
+
+    // Make text editable on click
+    todoText.addEventListener('click', (e) => {
+        // Don't trigger edit if clicking a link
+        if (e.target.tagName === 'A') return;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = todo.text;
+        input.className = 'edit-input';
+        
+        const originalText = todoText.innerHTML;
+        todoText.replaceWith(input);
+        input.focus();
+        
+        function saveEdit() {
+            const newText = input.value.trim();
+            if (newText && newText !== todo.text) {
+                todo.text = newText;
+                renderTodos();
+                saveTodos();
+                showToast('Task updated');
+            } else {
+                input.replaceWith(todoText);
+                todoText.innerHTML = originalText;
+            }
+        }
+        
+        input.addEventListener('blur', saveEdit);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveEdit();
+            } else if (e.key === 'Escape') {
+                input.replaceWith(todoText);
+                todoText.innerHTML = originalText;
+            }
+        });
     });
 
     const deleteBtn = li.querySelector('.delete-btn');
@@ -330,6 +371,12 @@ function createTodoElement(todo) {
     });
 
     return li;
+}
+
+// Helper function to convert URLs in text to clickable links
+function linkifyText(text) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
 }
 
 function renderTodos() {
