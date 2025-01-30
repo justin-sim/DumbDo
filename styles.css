@@ -164,12 +164,24 @@ input:focus {
     background: var(--container);
     border-radius: 8px;
     box-shadow: var(--shadow);
-    transition: transform var(--transition);
+    transition: transform var(--transition), box-shadow var(--transition);
     width: 100%;
     max-width: 500px;
+    cursor: default;
 }
 
-.todo-item:hover {
+.todo-item:not(.completed) {
+    cursor: grab;
+}
+
+.todo-item.dragging {
+    cursor: grabbing;
+    opacity: 0.9;
+    box-shadow: var(--shadow), 0 8px 16px rgba(0,0,0,0.1);
+    transform: scale(1.02) translateY(-2px);
+}
+
+.todo-item:not(.completed):hover {
     transform: translateY(-2px);
 }
 
@@ -671,4 +683,34 @@ input:focus {
 
 .pin-error[aria-hidden="false"] {
     display: block;
+}
+
+.active-todos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    align-items: center;
+}
+
+/* Add a visual indicator for drop target */
+.todo-item:not(.completed):not(.dragging)::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary);
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+
+.todo-item:not(.completed):not(.dragging).drop-above::after {
+    top: -1px;
+    opacity: 1;
+}
+
+.todo-item:not(.completed):not(.dragging).drop-below::after {
+    bottom: -1px;
+    opacity: 1;
 } 

@@ -307,6 +307,13 @@ async function saveTodos() {
 function createTodoElement(todo) {
     const li = document.createElement('li');
     li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+    
+    // Add drag attributes only for non-completed items
+    if (!todo.completed) {
+        li.draggable = true;
+        li.setAttribute('data-todo-id', todo.text); // Using text as a simple identifier
+    }
+    
     li.innerHTML = `
         <input type="checkbox" ${todo.completed ? 'checked' : ''}>
         <span class="todo-text">${linkifyText(todo.text)}</span>
@@ -370,6 +377,56 @@ function createTodoElement(todo) {
         showToast('Task deleted');
     });
 
+    // Add drag and drop event listeners for non-completed items
+    if (!todo.completed) {
+        li.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', todo.text);
+            li.classList.add('dragging');
+            // Set a custom drag image (optional)
+            const dragImage = li.cloneNode(true);
+            dragImage.style.position = 'absolute';
+            dragImage.style.top = '-1000px';
+            document.body.appendChild(dragImage);
+            e.dataTransfer.setDragImage(dragImage, 0, 0);
+            setTimeout(() => document.body.removeChild(dragImage), 0);
+        });
+
+        li.addEventListener('dragend', () => {
+            li.classList.remove('dragging');
+        });
+
+        li.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingItem = document.querySelector('.dragging');
+            if (draggingItem && !li.classList.contains('dragging') && !todo.completed) {
+                const items = [...todoList.querySelectorAll('.todo-item:not(.completed)')];
+                const currentPos = items.indexOf(draggingItem);
+                const newPos = items.indexOf(li);
+                
+                if (currentPos !== newPos) {
+                    const rect = li.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    const mouseY = e.clientY;
+                    
+                    if (mouseY < midY) {
+                        li.parentNode.insertBefore(draggingItem, li);
+                    } else {
+                        li.parentNode.insertBefore(draggingItem, li.nextSibling);
+                    }
+                    
+                    // Update the todos array to match the new order
+                    const activeTodos = todos[currentList].filter(t => !t.completed);
+                    const completedTodos = todos[currentList].filter(t => t.completed);
+                    const newOrder = [...document.querySelectorAll('.todo-item:not(.completed)')].map(item => {
+                        return activeTodos.find(t => t.text === item.getAttribute('data-todo-id'));
+                    });
+                    todos[currentList] = [...newOrder, ...completedTodos];
+                    saveTodos();
+                }
+            }
+        });
+    }
+
     return li;
 }
 
@@ -387,9 +444,24 @@ function renderTodos() {
     const activeTodos = currentTodos.filter(todo => !todo.completed);
     const completedTodos = currentTodos.filter(todo => todo.completed);
     
+    // Create a container for active todos
+    const activeTodosContainer = document.createElement('div');
+    activeTodosContainer.className = 'active-todos';
+    activeTodosContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const draggingItem = document.querySelector('.dragging');
+        if (draggingItem) {
+            const items = [...activeTodosContainer.querySelectorAll('.todo-item')];
+            if (items.length === 0) {
+                activeTodosContainer.appendChild(draggingItem);
+            }
+        }
+    });
+    todoList.appendChild(activeTodosContainer);
+    
     // Render active todos
     activeTodos.forEach(todo => {
-        todoList.appendChild(createTodoElement(todo));
+        activeTodosContainer.appendChild(createTodoElement(todo));
     });
     
     // Add divider if there are both active and completed todos
