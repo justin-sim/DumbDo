@@ -315,13 +315,28 @@ function createTodoElement(todo) {
     }
     
     li.innerHTML = `
-        <input type="checkbox" ${todo.completed ? 'checked' : ''}>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" ${todo.completed ? 'checked' : ''}>
+        </div>
         <span class="todo-text">${linkifyText(todo.text)}</span>
         <button class="delete-btn" aria-label="Delete todo">×</button>
     `;
 
     const checkbox = li.querySelector('input');
+    const checkboxWrapper = li.querySelector('.checkbox-wrapper');
     const todoText = li.querySelector('.todo-text');
+    
+    // Add click handler to the wrapper
+    checkboxWrapper.addEventListener('click', (e) => {
+        // Only trigger if clicking the wrapper (not the checkbox directly)
+        if (e.target === checkboxWrapper) {
+            checkbox.checked = !checkbox.checked;
+            todo.completed = checkbox.checked;
+            renderTodos();
+            saveTodos();
+            showToast(todo.completed ? 'Task completed! 🎉' : 'Task uncompleted');
+        }
+    });
     
     checkbox.addEventListener('change', () => {
         todo.completed = checkbox.checked;
@@ -432,8 +447,12 @@ function createTodoElement(todo) {
 
 // Helper function to convert URLs in text to clickable links
 function linkifyText(text) {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+    // Updated regex that doesn't include trailing punctuation in the URL
+    const urlRegex = /(https?:\/\/[^\s)]+)([)\s]|$)/g;
+    return text.replace(urlRegex, (match, url, endChar) => {
+        // Return the URL as a link plus any trailing character
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>${endChar}`;
+    });
 }
 
 function renderTodos() {
