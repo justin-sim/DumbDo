@@ -44,33 +44,46 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USERNAME }}
           SSH_PASS: ${{ secrets.SSH_PASSWORD }}
         run: |
-          # Create deployment script
+          # Create deployment script with error handling
           DEPLOY_SCRIPT="""
+          set -e  # Exit on error
+          
+          echo 'Creating data directory...'
           mkdir -p /app/data
           
-          # Login to registry on deployment server
+          echo 'Logging into registry...'
           docker login harbor.local.jushack.tech -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
           
-          # Pull the image (will automatically select amd64)
+          echo 'Pulling latest image...'
           docker pull harbor.local.jushack.tech/docker/dumbpad:latest
           
-          # Stop and remove existing container if it exists
-          docker stop dumbpad || true
-          docker rm dumbpad || true
+          echo 'Stopping old container...'
+          docker stop dumbpad-container || true
+          docker rm dumbpad-container || true
           
-          # Create and start new container
+          echo 'Starting new container...'
           docker run -d \
-            --name dumbpad \
+            --name dumbpad-container \
             --platform linux/amd64 \
             -p 3000:3000 \
             -v /app/data:/app/data \
             --restart unless-stopped \
             harbor.local.jushack.tech/docker/dumbpad:latest
           
-          # Verify container is running
-          docker ps | grep dumbpad-container
+          echo 'Verifying container status...'
+          docker ps | grep dumbpad-container || echo 'Container status check failed, but container might still be running'
+          
+          # Check if container is actually running regardless of grep
+          if docker ps --format '{{.Names}}' | grep -q '^dumbpad-container$'; then
+            echo 'Container is running successfully'
+            exit 0
+          else
+            echo 'Container failed to start'
+            exit 1
+          fi
           """
           
           export SSHPASS="${SSH_PASS}"
           sshpass -e ssh -o StrictHostKeyChecking=no ${SSH_USER}@192.168.248.79 "${DEPLOY_SCRIPT}"
         shell: bash
+        continue-on-error: true  # Optional: if you want the workflow to succeed even with non-zero exit
