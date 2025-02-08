@@ -19,20 +19,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-#      - name: Log in to Local Registry
-#        run: |
-#          docker login 192.168.248.131 -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
-#        shell: bash
+      - name: Log in to Local Registry
+        run: |
+          docker login harbor.local.jushack.tech -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
+        shell: bash
 
       - name: Build Docker Image
         run: |
-          docker build -t 192.168.248.131/docker/dumbpad:latest .
+          docker build -t harbor.local.jushack.tech/docker/dumbpad:latest .
         shell: bash
 
-#      - name: Push Docker Image
-#        run: |
-#          docker push 192.168.248.131/docker/dumbpad:latest
-#        shell: bash
+      - name: Push Docker Image
+        run: |
+          docker push harbor.local.jushack.tech/docker/dumbpad:latest
+        shell: bash
 
       - name: Deploy to server using SSH
         env:
@@ -42,7 +42,7 @@ jobs:
           # Create deployment script
           DEPLOY_SCRIPT="""
           mkdir -p /app/data
-          docker pull 192.168.248.131/docker/dumbpad:latest
+          docker pull harbor.local.jushack.tech/docker/dumbpad:latest
           docker stop dumbpad-container || true
           docker rm dumbpad-container || true
           docker run -d \
