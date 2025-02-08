@@ -55,8 +55,8 @@ jobs:
           docker pull harbor.local.jushack.tech/docker/dumbpad:latest
           
           # Stop and remove existing container if it exists
-          docker stop dumbpad-container || true
-          docker rm dumbpad-container || true
+          docker stop dumbpad || true
+          docker rm dumbpad || true
           
           # Create and start new container
           docker run -d \
