@@ -34,7 +34,7 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            --tag harbor.local.jushack.tech/docker/dumbpad:latest \
+            --tag harbor.local.jushack.tech/docker/dumbdo:latest \
             --push \
             .
         shell: bash
@@ -55,26 +55,26 @@ jobs:
           docker login harbor.local.jushack.tech -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
           
           echo 'Pulling latest image...'
-          docker pull harbor.local.jushack.tech/docker/dumbpad:latest
+          docker pull harbor.local.jushack.tech/docker/dumbdo:latest
           
           echo 'Stopping old container...'
-          docker stop dumbpad || true
-          docker rm dumbpad || true
+          docker stop dumbdo || true
+          docker rm dumbdo || true
           
           echo 'Starting new container...'
           docker run -d \
-            --name dumbpad \
+            --name dumbdo \
             --platform linux/amd64 \
             -p 3000:3000 \
             -v /app/data:/app/data \
             --restart unless-stopped \
-            harbor.local.jushack.tech/docker/dumbpad:latest
+            harbor.local.jushack.tech/docker/dumbdo:latest
           
           echo 'Verifying container status...'
-          docker ps | grep dumbpad || echo 'Container status check failed, but container might still be running'
+          docker ps | grep dumbdo || echo 'Container status check failed, but container might still be running'
           
           # Check if container is actually running regardless of grep
-          if docker ps --format '{{.Names}}' | grep -q '^dumbpad$'; then
+          if docker ps --format '{{.Names}}' | grep -q '^dumbdo$'; then
             echo 'Container is running successfully'
             exit 0
           else
