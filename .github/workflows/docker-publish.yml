@@ -50,7 +50,7 @@ jobs:
             -p 3000:3000 \
             -v /app/data:/app/data \
             --restart unless-stopped \
-            192.168.248.131/docker/dumbpad:latest
+            harbor.local.jushack.tech/docker/dumbpad:latest
           docker ps | grep dumbpad-container
           """
           
