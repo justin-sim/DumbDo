@@ -58,12 +58,12 @@ jobs:
           docker pull harbor.local.jushack.tech/docker/dumbpad:latest
           
           echo 'Stopping old container...'
-          docker stop dumbpad-container || true
-          docker rm dumbpad-container || true
+          docker stop dumbpad || true
+          docker rm dumbpad || true
           
           echo 'Starting new container...'
           docker run -d \
-            --name dumbpad-container \
+            --name dumbpad \
             --platform linux/amd64 \
             -p 3000:3000 \
             -v /app/data:/app/data \
