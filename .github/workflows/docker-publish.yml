@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted ## Run on self-hosted runner
     environment: docker_CT    # Specify the environment to use the correct secrets
     steps:
       - name: Checkout code
