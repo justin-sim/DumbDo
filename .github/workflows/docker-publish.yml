@@ -14,6 +14,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: docker_CT    # Specify the environment to use the correct secrets
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
