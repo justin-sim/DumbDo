@@ -1,4 +1,4 @@
-name: Build and Deploy Docker Image
+name: Homelab Build and Run
 on:
   workflow_dispatch:
     inputs:
