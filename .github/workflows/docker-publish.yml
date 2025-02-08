@@ -31,12 +31,14 @@ jobs:
 #        run: |
 #          docker push 192.168.248.131/docker/dumbpad:latest
 
-      - name: Connect to deployment server
+      - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: 192.168.248.79
           username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          password: ${{ secrets.SSH_PASSWORD }}    # Using password authentication
+          port: 22
+          script_stop: true
           script: |
             # Create data directory if it doesn't exist
             mkdir -p /app/data
