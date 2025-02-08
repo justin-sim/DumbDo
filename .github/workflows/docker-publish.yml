@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted    # Changed to use self-hosted runner
+    runs-on: self-hosted
     environment: docker_CT
     steps:
       - name: Checkout code
@@ -21,43 +21,40 @@ jobs:
 
 #      - name: Log in to Local Registry
 #        run: |
-#          echo "Logging into local registry"
 #          docker login 192.168.248.131 -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
+#        shell: bash
 
       - name: Build Docker Image
         run: |
           docker build -t 192.168.248.131/docker/dumbpad:latest .
+        shell: bash
 
 #      - name: Push Docker Image
 #        run: |
 #          docker push 192.168.248.131/docker/dumbpad:latest
+#        shell: bash
 
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: 192.168.248.79  # Using the IP from your error message
-          username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          port: 22
-          script_stop: true
-          script: |
-            # Create data directory if it doesn't exist
-            mkdir -p /app/data
-            
-            # Pull the latest image
-            docker pull 192.168.248.131/docker/dumbpad:latest
-            
-            # Stop and remove existing container if it exists
-            docker stop dumbpad-container || true
-            docker rm dumbpad-container || true
-            
-            # Create and start new container with specified parameters
-            docker run -d \
-              --name dumbpad-container \
-              -p 3000:3000 \
-              -v /app/data:/app/data \
-              --restart unless-stopped \
-              192.168.248.131/docker/dumbpad:latest
-            
-            # Verify container is running
-            docker ps | grep dumbpad-container
+      - name: Deploy to server using SSH
+        env:
+          SSH_USER: ${{ secrets.SSH_USERNAME }}
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          # Create deployment script
+          DEPLOY_SCRIPT="""
+          mkdir -p /app/data
+          docker pull 192.168.248.131/docker/dumbpad:latest
+          docker stop dumbpad-container || true
+          docker rm dumbpad-container || true
+          docker run -d \
+            --name dumbpad-container \
+            -p 3000:3000 \
+            -v /app/data:/app/data \
+            --restart unless-stopped \
+            192.168.248.131/docker/dumbpad:latest
+          docker ps | grep dumbpad-container
+          """
+          
+          # Using sshpass which is typically available on macOS
+          export SSHPASS="${SSH_PASS}"
+          sshpass -e ssh -o StrictHostKeyChecking=no ${SSH_USER}@192.168.248.79 "${DEPLOY_SCRIPT}"
+        shell: bash
